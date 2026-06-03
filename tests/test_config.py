@@ -63,3 +63,37 @@ overlay:
     assert cfg.capture.region.left == 10
     assert cfg.capture.region.width == 300
     assert cfg.overlay.font_size == 28
+
+
+def test_load_config_rejects_unknown_top_level_key(tmp_path: Path):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        """
+capture:
+  fps: 5
+unexpected: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        load_config(config_path)
+
+    assert "unexpected" in str(exc_info.value)
+
+
+def test_load_config_rejects_unknown_nested_key(tmp_path: Path):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        """
+capture:
+  fps: 5
+  typo: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        load_config(config_path)
+
+    assert "typo" in str(exc_info.value)

@@ -4,10 +4,14 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt
 
 
-class CaptureRegion(BaseModel):
+class StrictBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class CaptureRegion(StrictBaseModel):
     left: int = 300
     top: int = 760
     width: PositiveInt = 1320
@@ -22,31 +26,31 @@ class CaptureRegion(BaseModel):
         }
 
 
-class CaptureConfig(BaseModel):
+class CaptureConfig(StrictBaseModel):
     monitor: PositiveInt = 1
     region: CaptureRegion = Field(default_factory=CaptureRegion)
     fps: PositiveFloat = 8.0
 
 
-class OcrConfig(BaseModel):
+class OcrConfig(StrictBaseModel):
     engine: str = "mock"
     source_lang: str = "en"
 
 
-class PreprocessConfig(BaseModel):
+class PreprocessConfig(StrictBaseModel):
     scale: PositiveFloat = 2.0
     grayscale: bool = True
     contrast: PositiveFloat = 1.4
     threshold: bool = False
 
 
-class TranslationConfig(BaseModel):
+class TranslationConfig(StrictBaseModel):
     backend: str = "mock"
     source_lang: str = "en"
     target_lang: str = "uk"
 
 
-class OverlayConfig(BaseModel):
+class OverlayConfig(StrictBaseModel):
     x: int = 300
     y: int = 760
     width: PositiveInt = 1320
@@ -57,7 +61,7 @@ class OverlayConfig(BaseModel):
     background_opacity: float = Field(default=0.25, ge=0.0, le=1.0)
 
 
-class AppConfig(BaseModel):
+class AppConfig(StrictBaseModel):
     capture: CaptureConfig = Field(default_factory=CaptureConfig)
     ocr: OcrConfig = Field(default_factory=OcrConfig)
     preprocess: PreprocessConfig = Field(default_factory=PreprocessConfig)

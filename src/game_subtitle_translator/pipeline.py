@@ -45,9 +45,6 @@ class TextStabilizer:
             self._candidate_repeats = 0
             return None
 
-        if self._last_emitted and self._similar(text, self._last_emitted):
-            return None
-
         if not self._candidate:
             self._candidate = text
             self._candidate_repeats = 1
@@ -62,6 +59,10 @@ class TextStabilizer:
 
         if self._candidate_repeats >= self.min_repeats:
             emitted = self._candidate
+            if emitted == self._last_emitted:
+                self._candidate = ""
+                self._candidate_repeats = 0
+                return None
             self._last_emitted = emitted
             self._candidate = ""
             self._candidate_repeats = 0

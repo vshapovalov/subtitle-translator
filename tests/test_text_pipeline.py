@@ -34,6 +34,15 @@ def test_text_stabilizer_emits_new_subtitle_after_previous_one():
     assert stabilizer.update("Goodbye") == "Goodbye"
 
 
+def test_text_stabilizer_emits_distinct_similar_subtitle_after_repeats():
+    stabilizer = TextStabilizer(min_repeats=2, similarity_threshold=92)
+
+    assert stabilizer.update("Open the door") is None
+    assert stabilizer.update("Open the door") == "Open the door"
+    assert stabilizer.update("Open the doors") is None
+    assert stabilizer.update("Open the doors") == "Open the doors"
+
+
 def test_text_stabilizer_requires_repeats_without_blank_frames_between_them():
     stabilizer = TextStabilizer(min_repeats=2, similarity_threshold=92)
 
