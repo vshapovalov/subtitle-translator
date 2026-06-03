@@ -3,7 +3,12 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from game_subtitle_translator.config import AppConfig, CaptureRegion, load_config
+from game_subtitle_translator.config import (
+    AppConfig,
+    CaptureRegion,
+    apply_translation_region,
+    load_config,
+)
 
 
 def test_default_config_has_positive_capture_and_overlay_regions():
@@ -12,11 +17,26 @@ def test_default_config_has_positive_capture_and_overlay_regions():
     assert cfg.capture.region.width > 0
     assert cfg.capture.region.height > 0
     assert cfg.capture.fps > 0
+    assert cfg.ocr.engine == "easyocr"
     assert cfg.translation.source_lang == "en"
     assert cfg.translation.target_lang == "uk"
 
 
-def test_capture_region_rejects_non_positive_dimensions():
+def test_apply_translation_region_syncs_capture_and_overlay() -> None:
+    config = AppConfig()
+    region = CaptureRegion(left=42, top=84, width=640, height=180)
+
+    result = apply_translation_region(config, region)
+
+    assert result is config
+    assert config.capture.region == region
+    assert config.overlay.x == 42
+    assert config.overlay.y == 84
+    assert config.overlay.width == 640
+    assert config.overlay.height == 180
+
+
+def test_capture_region_rejects_non_positive_dimensions() -> None:
     with pytest.raises(ValidationError):
         CaptureRegion(left=0, top=0, width=0, height=100)
 
@@ -33,6 +53,7 @@ def test_load_config_creates_default_file_when_missing(tmp_path: Path):
     assert config_path.exists()
     text = config_path.read_text(encoding="utf-8")
     assert "translation:" in text
+    assert "engine: easyocr" in text
     assert "target_lang: uk" in text
 
 

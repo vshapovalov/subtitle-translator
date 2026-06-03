@@ -33,7 +33,7 @@ class CaptureConfig(StrictBaseModel):
 
 
 class OcrConfig(StrictBaseModel):
-    engine: str = "mock"
+    engine: str = "easyocr"
     source_lang: str = "en"
 
 
@@ -67,6 +67,17 @@ class AppConfig(StrictBaseModel):
     preprocess: PreprocessConfig = Field(default_factory=PreprocessConfig)
     translation: TranslationConfig = Field(default_factory=TranslationConfig)
     overlay: OverlayConfig = Field(default_factory=OverlayConfig)
+
+
+def apply_translation_region(config: AppConfig, region: CaptureRegion) -> AppConfig:
+    """Update capture and translated overlay geometry after a user region pick."""
+
+    config.capture.region = region
+    config.overlay.x = region.left
+    config.overlay.y = region.top
+    config.overlay.width = region.width
+    config.overlay.height = region.height
+    return config
 
 
 def default_config_path() -> Path:
