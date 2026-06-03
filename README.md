@@ -39,6 +39,62 @@ python -m pytest tests -q
 python -m game_subtitle_translator.main --print-config
 ```
 
+## Запуск и тестовый демо-сценарий
+
+Проект сейчас работает как безопасный MVP для Linux/headless и локальной разработки:
+захват области экрана, OCR-абстракция, стабилизация текста, кэш перевода и
+консольный overlay. Реальные OCR/переводчики еще не подключены; текущие тесты
+используют mock-бэкенды без сети.
+
+Установить проект для разработки:
+
+```bash
+python -m pip install -e ".[test]"
+```
+
+Показать текущую конфигурацию:
+
+```bash
+game-subtitle-translator --print-config
+# или
+python -m game_subtitle_translator.main --print-config
+```
+
+Запустить MVP CLI:
+
+```bash
+game-subtitle-translator
+```
+
+Сгенерировать детерминированную тестовую сцену с английскими субтитрами:
+
+```bash
+game-subtitle-test-scene --output-dir build/test-scene
+# или
+python -m game_subtitle_translator.test_scene --output-dir build/test-scene
+```
+
+Этот demo harness рендерит PNG-кадры через Pillow: темная игровая сцена,
+subtitle bar и английский текст. Для автоматических тестов субтитры также
+записаны в PNG metadata; `DeterministicSceneOcrEngine` читает эту metadata через
+обычный OCR-интерфейс. Это намеренно не имитация реального OCR, а стабильный
+E2E-контур для проверки пути:
+
+```text
+rendered test frames -> OCR abstraction -> TextStabilizer -> Translator/cache
+```
+
+Когда появится реальный OCR-адаптер, его можно подключить к тому же интерфейсу
+и оставить этот deterministic harness как быстрый regression test.
+
+Запустить тесты:
+
+```bash
+python -m pytest tests -q
+python -m compileall src tests
+ruff check .
+```
+
 ## Safety notes
 
 Prefer borderless fullscreen/windowed games for overlay compatibility. Avoid process injection and memory inspection, especially around anti-cheat protected games.
