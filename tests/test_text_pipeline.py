@@ -1,6 +1,8 @@
+import pytest
+
 from game_subtitle_translator.cache import TranslationCache
 from game_subtitle_translator.pipeline import TextStabilizer, normalize_subtitle_text
-from game_subtitle_translator.translate import MockTranslator
+from game_subtitle_translator.translate import ArgosTranslator, MockTranslator, create_translator
 
 
 def test_normalize_subtitle_text_collapses_whitespace_and_strips_prompt_garbage():
@@ -65,3 +67,38 @@ def test_mock_translator_makes_pipeline_visible_without_network():
     translator = MockTranslator()
 
     assert translator.translate("Open the door", "en", "uk") == "[uk] Open the door"
+
+
+def test_create_translator_supports_argos_backend_without_loading_optional_dependency():
+    translator = create_translator(" Argos ")
+
+    assert isinstance(translator, ArgosTranslator)
+
+
+def test_argos_translator_delegates_to_argostranslate_module():
+    class FakeArgosTranslate:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str, str]] = []
+
+        def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+            self.calls.append((text, source_lang, target_lang))
+            return "Відчиніть двері"
+
+    fake_argos_translate = FakeArgosTranslate()
+    translator = ArgosTranslator(argos_translate=fake_argos_translate)
+
+    assert translator.translate("Open the door", "en", "uk") == "Відчиніть двері"
+    assert fake_argos_translate.calls == [("Open the door", "en", "uk")]
+
+
+def test_argos_translator_reports_missing_optional_dependency(monkeypatch):
+    def missing_import(name: str):
+        assert name == "argostranslate.translate"
+        raise ImportError("argostranslate is not installed")
+
+    monkeypatch.setattr("game_subtitle_translator.translate.import_module", missing_import)
+
+    translator = ArgosTranslator()
+
+    with pytest.raises(RuntimeError, match=r"pip install .*argos"):
+        translator.translate("Open the door", "en", "uk")
