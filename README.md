@@ -17,6 +17,7 @@ Implemented and tested:
 - config models and default `config.yaml` creation
 - screen region capture adapter
 - OCR and translation interfaces with mock backends
+- Argos Translate adapter for offline translation when optional packages and language models are installed
 - image preprocessing helper
 - text normalization and subtitle stability filter
 - in-memory translation cache
@@ -28,7 +29,6 @@ Not implemented yet:
 - Qt transparent always-on-top overlay
 - region selection UI
 - real OCR backend adapter
-- real translation backend adapter
 - global hotkeys
 - Windows packaging
 
@@ -43,8 +43,9 @@ python -m game_subtitle_translator.main --print-config
 
 Проект сейчас работает как безопасный MVP для Linux/headless и локальной разработки:
 захват области экрана, OCR-абстракция, стабилизация текста, кэш перевода и
-консольный overlay. Реальные OCR/переводчики еще не подключены; текущие тесты
-используют mock-бэкенды без сети.
+консольный overlay. Реальный OCR-адаптер еще не подключен; перевод по
+умолчанию использует mock-бэкенд без сети, а optional Argos offline backend
+можно включить при установленных пакетах и языковой модели.
 
 Установить проект для разработки:
 
@@ -94,6 +95,39 @@ python -m pytest tests -q
 python -m compileall src tests
 ruff check .
 ```
+
+## Translation backends
+
+The default backend is `mock`, which is deterministic and requires no network,
+optional packages, or translation models:
+
+```yaml
+translation:
+  backend: mock
+  source_lang: en
+  target_lang: uk
+```
+
+Argos Translate is available as an optional offline backend:
+
+```bash
+python -m pip install -e ".[argos]"
+```
+
+Then configure:
+
+```yaml
+translation:
+  backend: argos
+  source_lang: en
+  target_lang: uk
+```
+
+Argos language packages/models are installed separately from the Python package.
+The runtime pipeline factory reads `translation.backend` and constructs the
+configured translator backend.
+If `argostranslate` or the requested language model is missing, Argos-specific
+tests skip explicitly instead of failing CI for absent optional dependencies.
 
 ## Safety notes
 
