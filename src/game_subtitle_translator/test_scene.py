@@ -117,10 +117,11 @@ def run_test_scene_pipeline(
         if stable_text is None:
             continue
 
-        cached = translation_cache.get(stable_text, source_lang, target_lang)
+        backend = text_translator.backend
+        cached = translation_cache.get(stable_text, source_lang, target_lang, backend)
         if cached is None:
             translated = text_translator.translate(stable_text, source_lang, target_lang)
-            translation_cache.set(stable_text, source_lang, target_lang, translated)
+            translation_cache.set(stable_text, source_lang, target_lang, backend, translated)
             from_cache = False
         else:
             translated = cached

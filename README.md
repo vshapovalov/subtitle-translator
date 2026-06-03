@@ -43,8 +43,9 @@ python -m game_subtitle_translator.main --print-config
 
 Проект сейчас работает как безопасный MVP для Linux/headless и локальной разработки:
 захват области экрана, OCR-абстракция, стабилизация текста, кэш перевода и
-консольный overlay. Реальные OCR/переводчики еще не подключены; текущие тесты
-используют mock-бэкенды без сети.
+консольный overlay. Реальный OCR-адаптер еще не подключен; перевод по
+умолчанию использует mock-бэкенд без сети, а optional Argos offline backend
+можно включить при установленных пакетах и языковой модели.
 
 Установить проект для разработки:
 
@@ -123,6 +124,8 @@ translation:
 ```
 
 Argos language packages/models are installed separately from the Python package.
+The runtime pipeline factory reads `translation.backend` and constructs the
+configured translator backend.
 If `argostranslate` or the requested language model is missing, Argos-specific
 tests skip explicitly instead of failing CI for absent optional dependencies.
 

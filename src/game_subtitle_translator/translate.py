@@ -6,6 +6,11 @@ from typing import Any
 
 
 class Translator(ABC):
+    @property
+    @abstractmethod
+    def backend(self) -> str:
+        raise NotImplementedError
+
     @abstractmethod
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         raise NotImplementedError
@@ -13,6 +18,10 @@ class Translator(ABC):
 
 class MockTranslator(Translator):
     """Network-free translator for TDD, demos and pipeline smoke tests."""
+
+    @property
+    def backend(self) -> str:
+        return "mock"
 
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         return f"[{target_lang}] {text}"
@@ -23,6 +32,10 @@ class ArgosTranslator(Translator):
 
     def __init__(self, argos_translate: Any | None = None) -> None:
         self._argos_translate = argos_translate
+
+    @property
+    def backend(self) -> str:
+        return "argos"
 
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         argos_translate = self._load_argos_translate()

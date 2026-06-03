@@ -1,7 +1,9 @@
 import pytest
 
 from game_subtitle_translator.cache import TranslationCache
+from game_subtitle_translator.config import AppConfig, TranslationConfig
 from game_subtitle_translator.pipeline import TextStabilizer, normalize_subtitle_text
+from game_subtitle_translator.realtime import SubtitlePipeline
 from game_subtitle_translator.translate import ArgosTranslator, MockTranslator, create_translator
 
 
@@ -57,10 +59,20 @@ def test_text_stabilizer_requires_repeats_without_blank_frames_between_them():
 def test_translation_cache_keys_by_languages_and_normalized_text():
     cache = TranslationCache()
 
-    cache.set(" Hello   world ", "en", "uk", "Привіт, світе")
+    cache.set(" Hello   world ", "en", "uk", "mock", "Привіт, світе")
 
-    assert cache.get("Hello world", "en", "uk") == "Привіт, світе"
-    assert cache.get("Hello world", "en", "de") is None
+    assert cache.get("Hello world", "en", "uk", "mock") == "Привіт, світе"
+    assert cache.get("Hello world", "en", "de", "mock") is None
+
+
+def test_translation_cache_keeps_backend_outputs_separate():
+    cache = TranslationCache()
+
+    cache.set("Open the door", "en", "uk", "mock", "[uk] Open the door")
+    cache.set("Open the door", "en", "uk", "argos", "Відчиніть двері")
+
+    assert cache.get("Open the door", "en", "uk", "mock") == "[uk] Open the door"
+    assert cache.get("Open the door", "en", "uk", "argos") == "Відчиніть двері"
 
 
 def test_mock_translator_makes_pipeline_visible_without_network():
@@ -73,6 +85,18 @@ def test_create_translator_supports_argos_backend_without_loading_optional_depen
     translator = create_translator(" Argos ")
 
     assert isinstance(translator, ArgosTranslator)
+
+
+def test_subtitle_pipeline_from_config_uses_configured_translation_backend():
+    class BlankOcr:
+        def recognize(self, image) -> str:
+            return ""
+
+    config = AppConfig(translation=TranslationConfig(backend="argos"))
+
+    pipeline = SubtitlePipeline.from_config(config, ocr=BlankOcr())
+
+    assert isinstance(pipeline.translator, ArgosTranslator)
 
 
 def test_argos_translator_delegates_to_argostranslate_module():
