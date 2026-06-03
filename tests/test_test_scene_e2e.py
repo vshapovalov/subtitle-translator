@@ -7,6 +7,7 @@ from PIL import Image
 from game_subtitle_translator.test_scene import (
     TEST_SCENE_CUES,
     DeterministicSceneOcrEngine,
+    _render_frame,
     render_test_scene_frames,
     run_test_scene_pipeline,
     save_test_scene_frames,
@@ -40,6 +41,15 @@ class CountingArgosTranslator(ArgosTranslator):
     @property
     def calls(self) -> list[str]:
         return self.argos_translate.calls
+
+
+class UkrainianArgosTranslator(Translator):
+    @property
+    def backend(self) -> str:
+        return "argos"
+
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
+        return "Відчиніть двері"
 
 
 def test_deterministic_scene_ocr_reads_rendered_frame_subtitle_metadata() -> None:
@@ -108,3 +118,32 @@ def test_test_scene_frames_round_trip_as_pngs_for_cli_and_automation(tmp_path: P
 
     with Image.open(saved_paths[0]) as reopened:
         assert ocr.recognize(reopened) == TEST_SCENE_CUES[0].subtitle
+
+
+def test_test_scene_overlay_renders_argos_ukrainian_letters_not_replacement_glyphs() -> None:
+    outputs = run_test_scene_pipeline(
+        render_test_scene_frames(frames_per_cue=2),
+        translator=UkrainianArgosTranslator(),
+        source_lang="en",
+        target_lang="uk",
+    )
+    ukrainian = _render_frame(
+        subtitle=outputs[0].translated_text,
+        frame_index=0,
+        cue_index=0,
+        repeat_index=0,
+        width=640,
+        height=360,
+    )
+    replacement = _render_frame(
+        subtitle="\N{REPLACEMENT CHARACTER}",
+        frame_index=0,
+        cue_index=0,
+        repeat_index=0,
+        width=640,
+        height=360,
+    )
+
+    subtitle_area = (28, 270, 92, 330)
+
+    assert ukrainian.crop(subtitle_area).tobytes() != replacement.crop(subtitle_area).tobytes()
