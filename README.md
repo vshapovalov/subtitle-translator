@@ -16,19 +16,19 @@ Implemented and tested:
 
 - config models and default `config.yaml` creation
 - screen region capture adapter
-- OCR and translation interfaces with mock backends
+- real EasyOCR adapter plus mock OCR for tests
 - Argos Translate adapter for offline translation when optional packages and language models are installed
 - image preprocessing helper
 - text normalization and subtitle stability filter
 - in-memory translation cache
 - headless-safe console overlay stub
-- CLI skeleton
+- Windows-focused PySide6 control overlay, region selector, translated text overlay, scanner controller, and system tray lifecycle
+- CLI entrypoint with `--print-config` and `--dry-run`
 
 Not implemented yet:
 
-- Qt transparent always-on-top overlay
-- region selection UI
-- real OCR backend adapter
+- click-through translated overlay
+- exclusive fullscreen support; use borderless fullscreen/windowed games
 - global hotkeys
 - Windows packaging
 
@@ -41,16 +41,17 @@ python -m game_subtitle_translator.main --print-config
 
 ## Запуск и тестовый демо-сценарий
 
-Проект сейчас работает как безопасный MVP для Linux/headless и локальной разработки:
-захват области экрана, OCR-абстракция, стабилизация текста, кэш перевода и
-консольный overlay. Реальный OCR-адаптер еще не подключен; перевод по
-умолчанию использует mock-бэкенд без сети, а optional Argos offline backend
-можно включить при установленных пакетах и языковой модели.
+Проект ориентирован на Windows и запускается как долгоживущий PySide6-процесс:
+при старте появляется movable control overlay с кнопками выбора региона,
+старта/остановки сканирования и сворачивания в system tray. При сворачивании в
+tray сканирование не останавливается. Кнопка Stop останавливает сканирование и
+сразу очищает translated overlay. Click-through и exclusive fullscreen пока не
+поддерживаются; используйте borderless fullscreen/windowed режимы игр.
 
 Установить проект для разработки:
 
 ```bash
-python -m pip install -e ".[test]"
+python -m pip install -e ".[ui,ocr,argos,test]"
 ```
 
 Показать текущую конфигурацию:
@@ -61,10 +62,16 @@ game-subtitle-translator --print-config
 python -m game_subtitle_translator.main --print-config
 ```
 
-Запустить MVP CLI:
+Запустить Windows UI:
 
 ```bash
 game-subtitle-translator
+```
+
+Проверить runtime wiring без открытия UI:
+
+```bash
+game-subtitle-translator --dry-run
 ```
 
 Сгенерировать детерминированную тестовую сцену с английскими субтитрами:
@@ -95,6 +102,24 @@ python -m pytest tests -q
 python -m compileall src tests
 ruff check .
 ```
+
+## OCR backends
+
+The default OCR backend is real EasyOCR:
+
+```yaml
+ocr:
+  engine: easyocr
+  source_lang: en
+```
+
+Install it with:
+
+```bash
+python -m pip install -e ".[ocr]"
+```
+
+`engine: mock` is retained for automated tests and deterministic demo fixtures.
 
 ## Translation backends
 
